@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Cute Bestie Pet 3D 🐾</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Three.js Library r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-sizing: border-box;
+        }
+        
+        .font-game {
+            font-family: 'Fredoka One', cursive;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Glassmorphism Styling */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .glass-panel-dark {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(240, 240, 240, 0.95);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-press {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-press:active {
+            transform: scale(0.93);
+        }
+
+        /* 3D Card Flip for Memory Game */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .card-flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-front-face {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%);
+            border: 2px solid #c084fc;
+        }
+
+        .card-back-face {
+            background: #ffffff;
+            border: 2px solid #a855f7;
+            transform: rotateY(180deg);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c084fc;
+            border-radius: 10px;
+        }
+
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 2.2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-2 sm:p-4 text-gray-800 relative select-none">
+
+    <!-- Top Header Navigation -->
+    <header class="w-full max-w-md glass-panel rounded-3xl p-3 mb-2 flex justify-between items-center z-20 border-white/60">
+        <div class="flex items-center space-x-2">
+            <!-- Infinite Coins Badge -->
+            <div class="bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center shadow-sm border border-amber-300/60">
+                <i class="fa-solid fa-coins text-amber-500 mr-1.5 text-sm"></i>
+                <span id="coin-count" class="font-game text-xs sm:text-sm tracking-wide">♾️ UNLIMITED</span>
+            </div>
+            <!-- Level Indicator -->
+            <div class="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-3 py-1.5 rounded-full text-xs font-bold flex items-center shadow-sm border border-purple-200">
+                <i class="fa-solid fa-crown text-purple-500 mr-1.5 text-xs"></i>
+                <span id="level-txt">Lvl 1</span>
+            </div>
+        </div>
+        
+        <!-- Room Lighting/Atmosphere Controls -->
+        <div class="flex items-center space-x-1.5 bg-white/50 p-1 rounded-full border border-gray-200/50">
+            <button onclick="changeAtmosphere('sunset')" title="Warm Sunset" class="w-6 h-6 rounded-full bg-gradient-to-tr from-rose-400 to-amber-300 border-2 border-white shadow-sm hover:scale-110 transition"></button>
+            <button onclick="changeAtmosphere('nature')" title="Cool Nature" class="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-300 to-teal-400 border-2 border-white shadow-sm hover:scale-110 transition"></button>
+            <button onclick="changeAtmosphere('sunshine')" title="Summer Sun" class="w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-300 to-amber-400 border-2 border-white shadow-sm hover:scale-110 transition"></button>
+            <button onclick="changeAtmosphere('snow')" title="Cozy Snow" class="w-6 h-6 rounded-full bg-gradient-to-tr from-sky-300 to-indigo-300 border-2 border-white shadow-sm hover:scale-110 transition"></button>
+        </div>
+    </header>
+
+    <!-- Main View Area (3D Canvas + Controls) -->
+    <main id="main-view" class="w-full max-w-md flex-1 flex flex-col items-center justify-center relative my-auto">
+        
+        <!-- Pet Species Selector Switcher -->
+        <div class="flex space-x-1.5 bg-white/70 p-1 rounded-2xl mb-2.5 shadow-sm border border-purple-100 z-20 text-xs font-bold">
+            <button onclick="switchPetSpecies('bunny')" id="btn-pet-bunny" class="px-3 py-1.5 rounded-xl transition bg-pink-500 text-white shadow-sm">🐰 Kelinci</button>
+            <button onclick="switchPetSpecies('cat')" id="btn-pet-cat" class="px-3 py-1.5 rounded-xl transition text-purple-700 hover:bg-purple-100/50">🐱 Kucing</button>
+            <button onclick="switchPetSpecies('bear')" id="btn-pet-bear" class="px-3 py-1.5 rounded-xl transition text-purple-700 hover:bg-purple-100/50">🧸 Beruang</button>
+            <button onclick="switchPetSpecies('panda')" id="btn-pet-panda" class="px-3 py-1.5 rounded-xl transition text-purple-700 hover:bg-purple-100/50">🐼 Panda</button>
+        </div>
+
+        <!-- 3D Canvas Viewport with integrated Speech Bubble overlay -->
+        <div id="canvas-container" class="relative w-full h-[370px] sm:h-[410px] rounded-3xl overflow-hidden shadow-xl glass-panel border border-white/80 cursor-grab active:cursor-grabbing transition-all duration-500 flex flex-col justify-between p-3">
+            
+            <!-- Speech / Interaction Bubble placed inside the 3D viewport over the character -->
+            <div id="speech-bubble" class="self-center glass-panel-dark px-4 py-2.5 rounded-2xl shadow-md max-w-[90%] text-center relative animate-bounce-subtle border border-purple-200/80 cursor-pointer btn-press z-10 my-1" onclick="triggerNote()">
+                <p id="speech-text" class="text-xs font-bold text-purple-900 leading-snug">
+                    "Halo bestie! Putar 360° & sentuh aku untuk elusan lembut~ 🐾✨"
+                </p>
+                <!-- Tail pointing directly down towards the 3D pet -->
+                <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[7px] border-l-transparent border-r-[7px] border-r-transparent border-t-[8px] border-t-white/95 filter drop-shadow-sm"></div>
+            </div>
+
+            <!-- Canvas Background Render -->
+            <canvas id="pet3dCanvas" class="absolute inset-0 w-full h-full block pointer-events-none"></canvas>
+            
+            <!-- Sub-caption Overlay -->
+            <div class="relative z-10 self-center bg-slate-900/40 backdrop-blur-md text-white text-[10px] font-semibold px-3.5 py-1 rounded-full pointer-events-none shadow-sm flex items-center gap-1.5 mt-auto">
+                <i class="fa-solid fa-arrows-rotate text-[9px] text-pink-300"></i>
+                <span>Geser 360° | Tap untuk Reaksi Hewan</span>
+            </div>
+        </div>
+
+        <!-- Quick Interactive Action Grid -->
+        <div class="grid grid-cols-3 gap-2.5 w-full my-3 z-10">
+            <button onclick="feedPet()" class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center btn-press hover:bg-pink-50/80 border-pink-100 shadow-sm">
+                <span class="text-2xl mb-0.5">🍰</span>
+                <span class="text-xs font-bold text-gray-700">Beri Makan</span>
+                <span class="text-[9px] text-emerald-600 font-bold"><i class="fa-solid fa-check text-emerald-500"></i> Gratis ♾️</span>
+            </button>
+            <button onclick="openClosetTab('shirts')" class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center btn-press hover:bg-purple-50/80 border-purple-100 shadow-sm">
+                <span class="text-2xl mb-0.5">👕</span>
+                <span class="text-xs font-bold text-gray-700">Dandani Hewan</span>
+                <span class="text-[9px] text-purple-600 font-bold">100% Unlocked</span>
+            </button>
+            <button onclick="triggerNote()" class="glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-center btn-press hover:bg-rose-50/80 border-rose-100 shadow-sm">
+                <span class="text-2xl mb-0.5">💌</span>
+                <span class="text-xs font-bold text-gray-700">Kata Manis</span>
+                <span class="text-[9px] text-rose-500 font-bold">Mood Booster</span>
+            </button>
+        </div>
+    </main>
+
+    <!-- 3D DRESS-UP / CLOSET MODAL -->
+    <div id="closet-view" class="w-full max-w-md glass-panel-dark rounded-3xl p-4 shadow-2xl hidden flex-col items-center my-auto z-30 border border-purple-200/80 max-h-[85vh] overflow-y-auto">
+        <div class="flex justify-between items-center w-full mb-3">
+            <div class="flex items-center space-x-2">
+                <h2 class="font-game text-base text-purple-700 flex items-center">
+                    <i class="fa-solid fa-shirt mr-2 text-purple-500"></i> Lemari Baju 3D
+                </h2>
+                <span class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-300">100% GRATIS</span>
+            </div>
+            <button onclick="showMainView()" class="w-7 h-7 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 rounded-full flex items-center justify-center text-sm font-bold transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Category Tabs -->
+        <div class="flex space-x-1 bg-purple-100/60 p-1 rounded-2xl w-full mb-3 text-xs font-bold">
+            <button id="tab-shirts" onclick="switchClosetTab('shirts')" class="flex-1 py-1.5 rounded-xl text-center bg-purple-600 text-white shadow-sm">Baju</button>
+            <button id="tab-pants" onclick="switchClosetTab('pants')" class="flex-1 py-1.5 rounded-xl text-center text-purple-700 hover:bg-white/50">Celana</button>
+            <button id="tab-hats" onclick="switchClosetTab('hats')" class="flex-1 py-1.5 rounded-xl text-center text-purple-700 hover:bg-white/50">Topi/Aksesoris</button>
+            <button id="tab-shoes" onclick="switchClosetTab('shoes')" class="flex-1 py-1.5 rounded-xl text-center text-purple-700 hover:bg-white/50">Sepatu</button>
+        </div>
+
+        <!-- Items Grid -->
+        <div id="closet-items-grid" class="grid grid-cols-2 gap-2.5 w-full">
+            <!-- Injected via JavaScript -->
+        </div>
+    </div>
+
+    <!-- MINI GAMES SELECTION LOBBY MODAL -->
+    <div id="minigames-view" class="w-full max-w-md glass-panel-dark rounded-3xl p-4 shadow-2xl hidden flex-col items-center my-auto z-30 border border-pink-200/80">
+        <div class="flex justify-between items-center w-full mb-3">
+            <h2 class="font-game text-base text-pink-600 flex items-center">
+                <i class="fa-solid fa-gamepad mr-2"></i> Mini Games Arena
+            </h2>
+            <button onclick="showMainView()" class="w-7 h-7 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 rounded-full flex items-center justify-center text-sm font-bold transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="space-y-2.5 w-full">
+            <!-- Game 1 Card -->
+            <div onclick="startMemoryGame()" class="glass-panel p-3 rounded-2xl flex items-center space-x-3 cursor-pointer btn-press hover:border-purple-300 border border-transparent transition">
+                <div class="text-2xl bg-purple-100 p-2.5 rounded-2xl">🃏</div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-purple-700 text-xs sm:text-sm">Memory Match 3D</h3>
+                    <p class="text-[10px] text-gray-500">Cocokkan kartu hewan & dessert imut!</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-purple-400 text-xs"></i>
+            </div>
+
+            <!-- Game 2 Card -->
+            <div onclick="startJumpGame()" class="glass-panel p-3 rounded-2xl flex items-center space-x-3 cursor-pointer btn-press hover:border-pink-300 border border-transparent transition">
+                <div class="text-2xl bg-pink-100 p-2.5 rounded-2xl">🐰</div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-pink-600 text-xs sm:text-sm">Pet Jump Hop 3D</h3>
+                    <p class="text-[10px] text-gray-500">Lompat di platform 3D melayang & kumpulkan bintang!</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-pink-400 text-xs"></i>
+            </div>
+
+            <!-- Game 3 Card -->
+            <div onclick="startPopGame()" class="glass-panel p-3 rounded-2xl flex items-center space-x-3 cursor-pointer btn-press hover:border-sky-300 border border-transparent transition">
+                <div class="text-2xl bg-sky-100 p-2.5 rounded-2xl">🎈</div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-sky-600 text-xs sm:text-sm">Balloon Pop 3D</h3>
+                    <p class="text-[10px] text-gray-500">Pecahkan balon melayang warna-warni!</p>
+                </div>
+                <i class="fa-solid fa-chevron-right text-sky-400 text-xs"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- MINI GAME 1: MEMORY MATCH 3D -->
+    <div id="memory-game-view" class="w-full max-w-md glass-panel-dark rounded-3xl p-4 shadow-2xl hidden flex-col items-center my-auto z-30 border border-purple-200">
+        <div class="flex justify-between items-center w-full mb-2">
+            <div class="font-game text-xs text-purple-700">Terbuka: <span id="memory-matches">0</span> / 6</div>
+            <button onclick="quitToGamesLobby()" class="bg-red-50 text-red-500 text-xs px-3 py-1 rounded-full font-bold hover:bg-red-100">Keluar</button>
+        </div>
+        <div id="memory-board" class="grid grid-cols-3 gap-2.5 w-full my-2">
+            <!-- Dynamic Cards Injected Here -->
+        </div>
+    </div>
+
+    <!-- MINI GAME 2: PET JUMP HOP 3D -->
+    <div id="jump-game-view" class="w-full max-w-md glass-panel-dark rounded-3xl p-3 shadow-2xl hidden flex-col items-center my-auto relative z-30 border border-pink-200">
+        <div class="flex justify-between items-center w-full mb-2">
+            <div class="font-game text-xs text-pink-600">Skor: <span id="jump-score">0</span></div>
+            <button onclick="quitToGamesLobby()" class="bg-red-50 text-red-500 text-xs px-3 py-1 rounded-full font-bold hover:bg-red-100">Keluar</button>
+        </div>
+        <div class="relative w-full h-72 rounded-2xl overflow-hidden border border-pink-200">
+            <canvas id="jumpCanvas" class="w-full h-full block bg-gradient-to-b from-sky-100 to-pink-50"></canvas>
+            <button onclick="triggerJump()" class="absolute bottom-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-game text-xs px-7 py-2 rounded-full shadow-lg btn-press">
+                🦘 LOMPAT!
+            </button>
+        </div>
+        <p class="text-[10px] text-gray-400 font-semibold mt-2 text-center">Tap tombol / layar untuk melompat melintasi balok!</p>
+    </div>
+
+    <!-- MINI GAME 3: POP BALLOON 3D -->
+    <div id="pop-game-view" class="w-full max-w-md glass-panel-dark rounded-3xl p-3 shadow-2xl hidden flex-col items-center my-auto relative z-30 border border-sky-200">
+        <div class="flex justify-between items-center w-full mb-2">
+            <div class="font-game text-xs text-sky-600">Skor: <span id="pop-score">0</span></div>
+            <div class="font-game text-xs text-amber-600">Sisa Waktu: <span id="pop-timer">25</span>s</div>
+            <button onclick="quitToGamesLobby()" class="bg-red-50 text-red-500 text-xs px-3 py-1 rounded-full font-bold hover:bg-red-100">Keluar</button>
+        </div>
+        <div class="relative w-full h-72 rounded-2xl overflow-hidden border border-sky-200 bg-gradient-to-b from-sky-50 to-purple-50">
+            <canvas id="popCanvas" class="w-full h-full block"></canvas>
+        </div>
+        <p class="text-[10px] text-gray-400 font-semibold mt-2 text-center">🎈 Ketuk balon-balon melayang sebelum waktunya habis!</p>
+    </div>
+
+    <!-- GAME OVER / RESULT MODAL (In-Tab Navigation) -->
+    <div id="game-result-modal" class="w-full max-w-md glass-panel-dark rounded-3xl p-5 shadow-2xl hidden flex-col items-center my-auto z-40 border border-purple-200 animate-bounce-subtle">
+        <div class="text-4xl mb-2" id="result-emoji">🎉</div>
+        <h3 class="font-game text-lg text-purple-700 mb-1" id="result-title">Permainan Selesai!</h3>
+        <p class="text-xs text-gray-600 mb-4" id="result-desc">Skor Akhir Kamu: <span id="result-score" class="font-bold text-purple-600">0</span></p>
+
+        <div class="flex flex-col space-y-2 w-full">
+            <button onclick="restartCurrentGame()" class="w-full py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-xs rounded-2xl shadow-md btn-press">
+                🔄 Main Lagi
+            </button>
+            <button onclick="quitToGamesLobby()" class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-2xl shadow-sm btn-press">
+                🎮 Kembali ke Menu Game
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="w-full max-w-md glass-panel rounded-full p-1.5 shadow-lg mt-2 flex justify-around items-center border-white/80 z-20">
+        <button onclick="showMainView()" class="flex flex-col items-center text-pink-600 font-bold text-xs py-1 px-4 rounded-full bg-pink-100/80 border border-pink-200/80 btn-press">
+            <i class="fa-solid fa-house text-sm mb-0.5"></i>
+            <span>Rumah 3D</span>
+        </button>
+        <button onclick="openClosetTab('shirts')" class="flex flex-col items-center text-purple-600 font-bold text-xs py-1 px-4 rounded-full hover:bg-purple-50 btn-press">
+            <i class="fa-solid fa-shirt text-sm mb-0.5"></i>
+            <span>Dandani</span>
+        </button>
+        <button onclick="openMiniGames()" class="flex flex-col items-center text-rose-600 font-bold text-xs py-1 px-4 rounded-full hover:bg-rose-50 btn-press">
+            <i class="fa-solid fa-gamepad text-sm mb-0.5"></i>
+            <span>Mini Game</span>
+        </button>
+    </nav>
+
+    <!-- JAVASCRIPT APP LOGIC & THREE.JS ENGINE -->
+    <script>
+        // Web Audio Synthesizer Engine
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'pet') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(450, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.18);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            } else if (type === 'coin') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(987.77, now);
+                osc.frequency.setValueAtTime(1318.51, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'pop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(550, now);
+                osc.frequency.exponentialRampToValueAtTime(120, now + 0.09);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.09);
+                osc.start(now);
+                osc.stop(now + 0.09);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.value = freq;
+                    g.gain.setValueAtTime(0.15, now + idx * 0.08);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.18);
+                    o.start(now + idx * 0.08);
+                    o.stop(now + idx * 0.08 + 0.18);
+                });
+            }
+        }
+
+        // Global State (Unlimited Everything)
+        let state = {
+            level: 1,
+            species: 'bunny', // 'bunny', 'cat', 'bear', 'panda'
+            equipped: {
+                shirts: 'none',
+                pants: 'none',
+                hats: 'none',
+                shoes: 'none'
+            }
+        };
+
+        // Items Catalog (All 100% Free)
+        const itemsCatalog = {
+            shirts: [
+                { id: 'hoodie_pink', name: 'Pastel Pink Hoodie 👚', color: 0xffa4b6 },
+                { id: 'shirt_sailor', name: 'Sailor Shirt ⚓', color: 0x64b5f6 },
+                { id: 'shirt_stripe', name: 'Striped Tee 👕', color: 0xffb74d },
+                { id: 'sweater_purple', name: 'Cozy Knit Sweater 💜', color: 0xba68c8 }
+            ],
+            pants: [
+                { id: 'jeans_blue', name: 'Denim Shorts 👖', color: 0x42a5f5 },
+                { id: 'skirt_pink', name: 'Tutu Skirt 👗', color: 0xf48fb1 },
+                { id: 'shorts_yellow', name: 'Casual Shorts 🩳', color: 0xffd54f },
+                { id: 'overalls_green', name: 'Cute Overalls 🐸', color: 0x81c784 }
+            ],
+            hats: [
+                { id: 'hat_crown', name: 'Golden Crown 👑', color: 0xffd700 },
+                { id: 'hat_bow', name: 'Ribbon Bow 🎀', color: 0xff4081 },
+                { id: 'hat_glasses', name: 'Cool Glasses 🕶️', color: 0x333333 },
+                { id: 'hat_chef', name: 'Chef Hat 🧑‍🍳', color: 0xffffff }
+            ],
+            shoes: [
+                { id: 'shoes_sneakers', name: 'Pastel Sneakers 👟', color: 0xff80ab },
+                { id: 'shoes_boots', name: 'Mini Boots 🥾', color: 0x8d6e63 }
+            ]
+        };
+
+        const sweetNotes = [
+            "Ingat ya, kamu itu selalu luar biasa berharga! Tetap tersenyum hari ini ✨😊",
+            "Kalau lelah, istirahat sejenak ya. Kamu sudah berjuang dengan hebat! 🌸",
+            "Aku selalu bangga banget sama usaha keras kamu setiap hari! 💪❤️",
+            "Senyuman manis kamu bisa bikin hari orang lain jadi lebih indah! ☀️",
+            "Jangan lupa minum air putih & istirahat yang cukup ya bestie~ 💧",
+            "Kamu pasti bisa melewati tantangan apapun hari ini! Stay positive! 💖",
+            "Bestie hewan 3D ini selalu siap nemenin kamu kapan pun kamu mau! 🐾"
+        ];
+
+        // THREE.JS 3D ENGINE PIPELINE
+        let scene, camera, renderer, petGroup;
+        let petBodyMesh, petHeadMesh, petEarL, petEarR, petSnoutMesh, petTailMesh;
+        let particlesSystem;
+        let active3DMeshes = { shirts: null, pants: null, hats: null, shoes: null };
+        
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let targetRotationY = 0;
+
+        function init3D() {
+            const container = document.getElementById('canvas-container');
+            const canvas = document.getElementById('pet3dCanvas');
+
+            scene = new THREE.Scene();
+            
+            camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 1.1, 5.2);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Soft Ambient & Directional Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.88);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xfff0f5, 0.75);
+            dirLight.position.set(3, 8, 5);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+
+            const fillLight = new THREE.PointLight(0xe0e7ff, 0.45, 10);
+            fillLight.position.set(-2, 2, 2);
+            scene.add(fillLight);
+
+            // Soft Ground Shadow Disc
+            const shadowGeo = new THREE.CircleGeometry(1.1, 32);
+            const shadowMat = new THREE.MeshBasicMaterial({ color: 0xd8b4fe, transparent: true, opacity: 0.35 });
+            const shadowMesh = new THREE.Mesh(shadowGeo, shadowMat);
+            shadowMesh.rotation.x = -Math.PI / 2;
+            shadowMesh.position.y = -1.1;
+            scene.add(shadowMesh);
+
+            // Build Full-Body Stylized 3D Pet Animal
+            create3DAnimalCharacter(state.species);
+
+            // Background Ambient Particles
+            createEnvironmentParticles('sunset');
+
+            // Set Up Interaction Events
+            setup3DInteractions(container);
+
+            // Start Render Loop
+            animate3D();
+        }
+
+        function create3DAnimalCharacter(species = 'bunny') {
+            if (petGroup) scene.remove(petGroup);
+            petGroup = new THREE.Group();
+
+            let mainColor = 0xfff0f5; // Bunny soft pinkish white
+            let innerEarColor = 0xffb6c1;
+
+            if (species === 'cat') {
+                mainColor = 0xffdfba; // Orange pastel cat
+                innerEarColor = 0xffb3ba;
+            } else if (species === 'bear') {
+                mainColor = 0xd7ccc8; // Cozy brown bear
+                innerEarColor = 0x8d6e63;
+            } else if (species === 'panda') {
+                mainColor = 0xffffff; // Panda white
+                innerEarColor = 0x333333;
+            }
+
+            const furMaterial = new THREE.MeshStandardMaterial({
+                color: mainColor,
+                roughness: 0.5,
+                metalness: 0.05
+            });
+
+            const innerEarMat = new THREE.MeshStandardMaterial({
+                color: innerEarColor,
+                roughness: 0.6
+            });
+
+            // 1. HEAD (Chubby Cute Pet Head)
+            const headGeo = new THREE.SphereGeometry(0.72, 32, 32);
+            headGeo.scale(1, 0.92, 0.95);
+            petHeadMesh = new THREE.Mesh(headGeo, furMaterial);
+            petHeadMesh.position.y = 0.5;
+            petHeadMesh.castShadow = true;
+            petGroup.add(petHeadMesh);
+
+            // 2. SPECIES SPECIFIC EARS & FEATURES
+            if (species === 'bunny') {
+                // Long Cute Bunny Ears
+                const earGeo = new THREE.CylinderGeometry(0.08, 0.18, 0.85, 16);
+                earGeo.scale(1, 1, 0.5);
+
+                petEarL = new THREE.Mesh(earGeo, furMaterial);
+                petEarL.position.set(-0.32, 1.25, 0);
+                petEarL.rotation.z = 0.2;
+                petEarL.rotation.x = -0.1;
+                petHeadMesh.add(petEarL);
+
+                const innerEarGeo = new THREE.CylinderGeometry(0.05, 0.12, 0.75, 16);
+                innerEarGeo.scale(1, 1, 0.3);
+                const innerEarL = new THREE.Mesh(innerEarGeo, innerEarMat);
+                innerEarL.position.set(0, 0, 0.05);
+                petEarL.add(innerEarL);
+
+                petEarR = new THREE.Mesh(earGeo, furMaterial);
+                petEarR.position.set(0.32, 1.25, 0);
+                petEarR.rotation.z = -0.2;
+                petEarR.rotation.x = -0.1;
+                petHeadMesh.add(petEarR);
+
+                const innerEarR = new THREE.Mesh(innerEarGeo, innerEarMat);
+                innerEarR.position.set(0, 0, 0.05);
+                petEarR.add(innerEarR);
+
+            } else if (species === 'cat') {
+                // Triangular Cat Ears
+                const earGeo = new THREE.ConeGeometry(0.22, 0.4, 16);
+                petEarL = new THREE.Mesh(earGeo, furMaterial);
+                petEarL.position.set(-0.38, 0.75, 0.1);
+                petEarL.rotation.z = -0.2;
+                petHeadMesh.add(petEarL);
+
+                petEarR = new THREE.Mesh(earGeo, furMaterial);
+                petEarR.position.set(0.38, 0.75, 0.1);
+                petEarR.rotation.z = 0.2;
+                petHeadMesh.add(petEarR);
+
+            } else if (species === 'bear' || species === 'panda') {
+                // Round Bear / Panda Ears
+                const earGeo = new THREE.SphereGeometry(0.22, 16, 16);
+                const earMat = (species === 'panda') ? new THREE.MeshStandardMaterial({ color: 0x222222 }) : furMaterial;
+                
+                petEarL = new THREE.Mesh(earGeo, earMat);
+                petEarL.position.set(-0.48, 0.65, 0);
+                petHeadMesh.add(petEarL);
+
+                petEarR = new THREE.Mesh(earGeo, earMat);
+                petEarR.position.set(0.48, 0.65, 0);
+                petHeadMesh.add(petEarR);
+            }
+
+            // Panda Eye Patches
+            if (species === 'panda') {
+                const patchGeo = new THREE.SphereGeometry(0.18, 16, 16);
+                patchGeo.scale(1, 1.2, 0.3);
+                const patchMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+
+                const patchL = new THREE.Mesh(patchGeo, patchMat);
+                patchL.position.set(-0.25, 0.08, 0.62);
+                patchL.rotation.z = 0.2;
+                petHeadMesh.add(patchL);
+
+                const patchR = new THREE.Mesh(patchGeo, patchMat);
+                patchR.position.set(0.25, 0.08, 0.62);
+                patchR.rotation.z = -0.2;
+                petHeadMesh.add(patchR);
+            }
+
+            // 3. EYES
+            const eyeGeo = new THREE.SphereGeometry(0.075, 16, 16);
+            const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+            
+            const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+            eyeL.position.set(-0.24, 0.08, 0.66);
+            petHeadMesh.add(eyeL);
+
+            const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+            eyeR.position.set(0.24, 0.08, 0.66);
+            petHeadMesh.add(eyeR);
+
+            // Eye Highlights
+            const highlightGeo = new THREE.SphereGeometry(0.024, 8, 8);
+            const highlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const hlL = new THREE.Mesh(highlightGeo, highlightMat);
+            hlL.position.set(-0.02, 0.02, 0.065);
+            eyeL.add(hlL);
+            const hlR = new THREE.Mesh(highlightGeo, highlightMat);
+            hlR.position.set(-0.02, 0.02, 0.065);
+            eyeR.add(hlR);
+
+            // 4. ANIMAL SNOUT / MUZZLE & NOSE
+            const snoutGeo = new THREE.SphereGeometry(0.16, 16, 16);
+            snoutGeo.scale(1.2, 0.8, 0.8);
+            const snoutMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+            petSnoutMesh = new THREE.Mesh(snoutGeo, snoutMat);
+            petSnoutMesh.position.set(0, -0.06, 0.65);
+            petHeadMesh.add(petSnoutMesh);
+
+            const noseGeo = new THREE.SphereGeometry(0.045, 12, 12);
+            const noseMat = new THREE.MeshStandardMaterial({ color: (species === 'bunny') ? 0xff69b4 : 0x222222 });
+            const nose = new THREE.Mesh(noseGeo, noseMat);
+            nose.position.set(0, 0.04, 0.12);
+            petSnoutMesh.add(nose);
+
+            // Soft Blush Circles
+            const blushGeo = new THREE.CircleGeometry(0.09, 16);
+            const blushMat = new THREE.MeshBasicMaterial({ color: 0xffa0b4, transparent: true, opacity: 0.55 });
+            const blushL = new THREE.Mesh(blushGeo, blushMat);
+            blushL.position.set(-0.38, -0.09, 0.65);
+            blushL.rotation.y = -0.3;
+            petHeadMesh.add(blushL);
+
+            const blushR = new THREE.Mesh(blushGeo, blushMat);
+            blushR.position.set(0.38, -0.09, 0.65);
+            blushR.rotation.y = 0.3;
+            petHeadMesh.add(blushR);
+
+            // 5. CHUBBY ANIMAL BODY (Pudgy Torso)
+            const bodyGeo = new THREE.SphereGeometry(0.62, 32, 32);
+            bodyGeo.scale(0.88, 1.08, 0.82);
+            petBodyMesh = new THREE.Mesh(bodyGeo, furMaterial);
+            petBodyMesh.position.y = -0.35;
+            petBodyMesh.castShadow = true;
+            petGroup.add(petBodyMesh);
+
+            // 6. ANIMAL LIMBS (Paws)
+            const armMat = (species === 'panda') ? new THREE.MeshStandardMaterial({ color: 0x222222 }) : furMaterial;
+            
+            // Cute Rounded Upper Arms with Paw Hands
+            const armGeo = new THREE.SphereGeometry(0.14, 16, 16);
+            armGeo.scale(0.8, 1.6, 0.8);
+
+            const armL = new THREE.Mesh(armGeo, armMat);
+            armL.position.set(-0.52, 0.05, 0.08);
+            armL.rotation.z = 0.45;
+            petBodyMesh.add(armL);
+
+            const armR = new THREE.Mesh(armGeo, armMat);
+            armR.position.set(0.52, 0.05, 0.08);
+            armR.rotation.z = -0.45;
+            petBodyMesh.add(armR);
+
+            // Cute Chunky Animal Legs & Feet
+            const legMat = (species === 'panda') ? new THREE.MeshStandardMaterial({ color: 0x222222 }) : furMaterial;
+            const legGeo = new THREE.SphereGeometry(0.18, 16, 16);
+            legGeo.scale(1, 0.8, 1.3);
+
+            const legL = new THREE.Mesh(legGeo, legMat);
+            legL.position.set(-0.26, -0.62, 0.1);
+            petBodyMesh.add(legL);
+
+            const legR = new THREE.Mesh(legGeo, legMat);
+            legR.position.set(0.26, -0.62, 0.1);
+            petBodyMesh.add(legR);
+
+            // Fluffy Tail
+            const tailGeo = new THREE.SphereGeometry(species === 'bunny' ? 0.15 : 0.12, 16, 16);
+            petTailMesh = new THREE.Mesh(tailGeo, furMaterial);
+            petTailMesh.position.set(0, -0.35, -0.52);
+            petBodyMesh.add(petTailMesh);
+
+            scene.add(petGroup);
+
+            // Re-apply equipped clothes if available
+            Object.keys(state.equipped).forEach(cat => {
+                if (state.equipped[cat] !== 'none') {
+                    equip3DItem(cat, state.equipped[cat]);
+                }
+            });
+        }
+
+        function switchPetSpecies(species) {
+            playSound('pop');
+            state.species = species;
+            ['bunny', 'cat', 'bear', 'panda'].forEach(s => {
+                const btn = document.getElementById(`btn-pet-${s}`);
+                if (s === species) {
+                    btn.className = "px-3 py-1.5 rounded-xl transition bg-pink-500 text-white shadow-sm font-bold";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-xl transition text-purple-700 hover:bg-purple-100/50 font-bold";
+                }
+            });
+
+            create3DAnimalCharacter(species);
+        }
+
+        function createEnvironmentParticles(type) {
+            if (particlesSystem) scene.remove(particlesSystem);
+
+            const count = 50;
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(count * 3);
+
+            for (let i = 0; i < count * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 8;
+                positions[i + 1] = Math.random() * 6 - 2;
+                positions[i + 2] = (Math.random() - 0.5) * 6;
+            }
+
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            let color = 0xffb6c1;
+            if (type === 'nature') color = 0xa7f3d0;
+            if (type === 'sunshine') color = 0xfde047;
+            if (type === 'snow') color = 0xe0f2fe;
+
+            const mat = new THREE.PointsMaterial({
+                color: color,
+                size: 0.1,
+                transparent: true,
+                opacity: 0.8
+            });
+
+            particlesSystem = new THREE.Points(geo, mat);
+            scene.add(particlesSystem);
+        }
+
+        function changeAtmosphere(type) {
+            playSound('pop');
+            createEnvironmentParticles(type);
+            const container = document.getElementById('canvas-container');
+            if (type === 'sunset') container.style.background = 'linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%)';
+            if (type === 'nature') container.style.background = 'linear-gradient(135deg, #e8f5e9 0%, #e0f2f1 100%)';
+            if (type === 'sunshine') container.style.background = 'linear-gradient(135deg, #fffde7 0%, #fff3e0 100%)';
+            if (type === 'snow') container.style.background = 'linear-gradient(135deg, #e0f7fa 0%, #e8eaf6 100%)';
+        }
+
+        function setup3DInteractions(container) {
+            const onDown = (e) => {
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                previousMousePosition = { x: clientX, y: clientY };
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const deltaX = clientX - previousMousePosition.x;
+                
+                targetRotationY += deltaX * 0.012;
+                previousMousePosition = { x: clientX, y: e.touches ? e.touches[0].clientY : e.clientY };
+            };
+
+            const onUp = () => {
+                if (isDragging && Math.abs(targetRotationY - petGroup.rotation.y) < 0.05) {
+                    pet3DReaction();
+                }
+                isDragging = false;
+            };
+
+            container.addEventListener('mousedown', onDown);
+            container.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+
+            container.addEventListener('touchstart', onDown, { passive: true });
+            container.addEventListener('touchmove', onMove, { passive: true });
+            window.addEventListener('touchend', onUp);
+        }
+
+        let reactionAnim = 0;
+        function pet3DReaction() {
+            playSound('pet');
+            reactionAnim = 1.0;
+
+            const quotes = [
+                "Geli deh! Hehehe~ 🥰",
+                "Usapanmu hangat banget! ✨",
+                "Aku makin sayang sama kamu! 💖",
+                "Lagi dong, elus aku lagi! 🐾"
+            ];
+            document.getElementById('speech-text').innerText = quotes[Math.floor(Math.random() * quotes.length)];
+            confetti({ particleCount: 15, spread: 40, origin: { y: 0.6 } });
+        }
+
+        function equip3DItem(category, itemId) {
+            const itemConfig = itemsCatalog[category]?.find(i => i.id === itemId);
+
+            // Remove existing item mesh if active
+            if (active3DMeshes[category]) {
+                if (category === 'hats' || category === 'shirts') petHeadMesh.remove(active3DMeshes[category]);
+                else petBodyMesh.remove(active3DMeshes[category]);
+                active3DMeshes[category] = null;
+            }
+
+            if (itemId === 'none') {
+                state.equipped[category] = 'none';
+                return;
+            }
+
+            const itemMat = new THREE.MeshStandardMaterial({
+                color: itemConfig.color,
+                roughness: 0.4,
+                metalness: 0.1
+            });
+
+            // 1. SHIRTS
+            if (category === 'shirts') {
+                const shirtGeo = new THREE.CylinderGeometry(0.56, 0.63, 0.58, 24);
+                const shirtMesh = new THREE.Mesh(shirtGeo, itemMat);
+                shirtMesh.position.set(0, -0.05, 0);
+                petBodyMesh.add(shirtMesh);
+                active3DMeshes.shirts = shirtMesh;
+            }
+
+            // 2. PANTS
+            if (category === 'pants') {
+                const pantsGeo = new THREE.CylinderGeometry(0.63, 0.6, 0.38, 24);
+                const pantsMesh = new THREE.Mesh(pantsGeo, itemMat);
+                pantsMesh.position.set(0, -0.4, 0);
+                petBodyMesh.add(pantsMesh);
+                active3DMeshes.pants = pantsMesh;
+            }
+
+            // 3. HATS & ACCESSORIES
+            if (category === 'hats') {
+                let hatMesh;
+                if (itemId === 'hat_crown') {
+                    const crownGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.18, 6);
+                    hatMesh = new THREE.Mesh(crownGeo, itemMat);
+                    hatMesh.position.set(0, 0.82, 0);
+                } else if (itemId === 'hat_bow') {
+                    const bowGeo = new THREE.BoxGeometry(0.32, 0.16, 0.1);
+                    hatMesh = new THREE.Mesh(bowGeo, itemMat);
+                    hatMesh.position.set(0, 0.75, 0.48);
+                } else if (itemId === 'hat_glasses') {
+                    const glassGeo = new THREE.TorusGeometry(0.11, 0.02, 8, 16);
+                    hatMesh = new THREE.Group();
+                    const gL = new THREE.Mesh(glassGeo, itemMat);
+                    gL.position.x = -0.24;
+                    const gR = new THREE.Mesh(glassGeo, itemMat);
+                    gR.position.x = 0.24;
+                    hatMesh.add(gL);
+                    hatMesh.add(gR);
+                    hatMesh.position.set(0, 0.1, 0.66);
+                } else if (itemId === 'hat_chef') {
+                    const chefGeo = new THREE.CylinderGeometry(0.32, 0.24, 0.32, 16);
+                    hatMesh = new THREE.Mesh(chefGeo, itemMat);
+                    hatMesh.position.set(0, 0.88, 0);
+                }
+                if (hatMesh) {
+                    petHeadMesh.add(hatMesh);
+                    active3DMeshes.hats = hatMesh;
+                }
+            }
+
+            // 4. SHOES
+            if (category === 'shoes') {
+                const shoeGroup = new THREE.Group();
+                const shoeGeo = new THREE.BoxGeometry(0.2, 0.13, 0.26);
+                const sL = new THREE.Mesh(shoeGeo, itemMat);
+                sL.position.set(-0.26, -0.66, 0.14);
+                const sR = new THREE.Mesh(shoeGeo, itemMat);
+                sR.position.set(0.26, -0.66, 0.14);
+                shoeGroup.add(sL);
+                shoeGroup.add(sR);
+                petBodyMesh.add(shoeGroup);
+                active3DMeshes.shoes = shoeGroup;
+            }
+
+            state.equipped[category] = itemId;
+            playSound('pop');
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+
+            petGroup.rotation.y += (targetRotationY - petGroup.rotation.y) * 0.1;
+
+            const time = Date.now() * 0.003;
+            petGroup.position.y = Math.sin(time) * 0.04;
+            
+            if (petEarL && petEarR) {
+                petEarL.rotation.z = 0.2 + Math.sin(time * 1.5) * 0.04;
+                petEarR.rotation.z = -0.2 - Math.sin(time * 1.5) * 0.04;
+            }
+
+            if (reactionAnim > 0) {
+                reactionAnim -= 0.04;
+                const bounce = Math.sin(reactionAnim * Math.PI * 3) * reactionAnim * 0.22;
+                petGroup.scale.set(1 + bounce, 1 - bounce, 1 + bounce);
+            } else {
+                petGroup.scale.set(1, 1, 1);
+            }
+
+            if (particlesSystem) {
+                particlesSystem.rotation.y += 0.001;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function feedPet() {
+            playSound('coin');
+            pet3DReaction();
+            document.getElementById('speech-text').innerText = "Nyam nyam! Lezat banget kuenya, makasih ya bestie! 🍰✨";
+        }
+
+        function triggerNote() {
+            playSound('pop');
+            const note = sweetNotes[Math.floor(Math.random() * sweetNotes.length)];
+            document.getElementById('speech-text').innerText = `"${note}"`;
+        }
+
+        // VIEW & CLOSET NAVIGATION
+        function showMainView() {
+            playSound('pop');
+            document.getElementById('main-view').classList.remove('hidden');
+            document.getElementById('closet-view').classList.add('hidden');
+            document.getElementById('minigames-view').classList.add('hidden');
+            document.getElementById('memory-game-view').classList.add('hidden');
+            document.getElementById('jump-game-view').classList.add('hidden');
+            document.getElementById('pop-game-view').classList.add('hidden');
+            document.getElementById('game-result-modal').classList.add('hidden');
+        }
+
+        function openMiniGames() {
+            playSound('pop');
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('closet-view').classList.add('hidden');
+            document.getElementById('memory-game-view').classList.add('hidden');
+            document.getElementById('jump-game-view').classList.add('hidden');
+            document.getElementById('pop-game-view').classList.add('hidden');
+            document.getElementById('game-result-modal').classList.add('hidden');
+            
+            document.getElementById('minigames-view').classList.remove('hidden');
+            document.getElementById('minigames-view').classList.add('flex');
+        }
+
+        let currentClosetCategory = 'shirts';
+
+        function openClosetTab(cat) {
+            playSound('pop');
+            document.getElementById('main-view').classList.add('hidden');
+            document.getElementById('minigames-view').classList.add('hidden');
+            document.getElementById('closet-view').classList.remove('hidden');
+            document.getElementById('closet-view').classList.add('flex');
+            switchClosetTab(cat);
+        }
+
+        function switchClosetTab(cat) {
+            currentClosetCategory = cat;
+            ['shirts', 'pants', 'hats', 'shoes'].forEach(c => {
+                const btn = document.getElementById(`tab-${c}`);
+                if (c === cat) {
+                    btn.className = "flex-1 py-1.5 rounded-xl text-center bg-purple-600 text-white shadow-sm font-bold";
+                } else {
+                    btn.className = "flex-1 py-1.5 rounded-xl text-center text-purple-700 hover:bg-white/50 font-bold";
+                }
+            });
+
+            renderClosetGrid();
+        }
+
+        function renderClosetGrid() {
+            const grid = document.getElementById('closet-items-grid');
+            grid.innerHTML = '';
+
+            const items = itemsCatalog[currentClosetCategory];
+
+            // Option to Unequip / Strip
+            const stripBtn = document.createElement('div');
+            stripBtn.className = 'glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-between border border-purple-200/60 cursor-pointer btn-press';
+            stripBtn.innerHTML = `
+                <span class="text-xl my-1">🚫</span>
+                <span class="text-xs font-bold text-gray-600">Lepas Aksesoris</span>
+                <button onclick="equip3DItem('${currentClosetCategory}', 'none'); renderClosetGrid();" class="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-[10px] font-bold py-1 rounded-full shadow-sm">Lepas</button>
+            `;
+            grid.appendChild(stripBtn);
+
+            items.forEach(item => {
+                const isEquipped = state.equipped[currentClosetCategory] === item.id;
+
+                const card = document.createElement('div');
+                card.className = `glass-panel p-2.5 rounded-2xl flex flex-col items-center justify-between border ${isEquipped ? 'border-emerald-400 bg-emerald-50/50' : 'border-purple-200/60'}`;
+
+                let buttonHTML = isEquipped ?
+                    `<button onclick="equip3DItem('${currentClosetCategory}', 'none'); renderClosetGrid();" class="w-full bg-emerald-500 text-white text-[10px] font-bold py-1 rounded-full shadow-sm">Terpakai (Lepas)</button>` :
+                    `<button onclick="equip3DItem('${currentClosetCategory}', '${item.id}'); renderClosetGrid();" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold py-1 rounded-full shadow-sm">Gunakan (Gratis)</button>`;
+
+                card.innerHTML = `
+                    <span class="text-2xl my-1">${item.name.split(' ').pop()}</span>
+                    <span class="text-xs font-bold text-gray-700 text-center leading-tight mb-1">${item.name}</span>
+                    ${buttonHTML}
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        let activeGameName = '';
+
+        function showGameOverModal(title, score, emoji = '🎉') {
+            document.getElementById('result-emoji').innerText = emoji;
+            document.getElementById('result-title').innerText = title;
+            document.getElementById('result-score').innerText = score;
+
+            document.getElementById('memory-game-view').classList.add('hidden');
+            document.getElementById('jump-game-view').classList.add('hidden');
+            document.getElementById('pop-game-view').classList.add('hidden');
+
+            document.getElementById('game-result-modal').classList.remove('hidden');
+            document.getElementById('game-result-modal').classList.add('flex');
+        }
+
+        function restartCurrentGame() {
+            document.getElementById('game-result-modal').classList.add('hidden');
+            if (activeGameName === 'memory') startMemoryGame();
+            else if (activeGameName === 'jump') startJumpGame();
+            else if (activeGameName === 'pop') startPopGame();
+        }
+
+        function quitToGamesLobby() {
+            cancelAnimationFrame(jumpLoop);
+            cancelAnimationFrame(popLoop);
+            clearInterval(popTimerInterval);
+            openMiniGames();
+        }
+
+        // MINI GAME 1: MEMORY MATCH 3D
+        const memoryIcons = ['🐱', '🌸', '🍓', '🐣', '🧸', '🍦'];
+        let memoryCards = [], flippedCards = [], matchesFound = 0, isProcessingFlip = false;
+
+        function startMemoryGame() {
+            activeGameName = 'memory';
+            playSound('pop');
+            document.getElementById('minigames-view').classList.add('hidden');
+            document.getElementById('memory-game-view').classList.remove('hidden');
+            document.getElementById('memory-game-view').classList.add('flex');
+
+            matchesFound = 0;
+            isProcessingFlip = false;
+            document.getElementById('memory-matches').innerText = matchesFound;
+
+            memoryCards = [...memoryIcons, ...memoryIcons].sort(() => Math.random() - 0.5);
+            flippedCards = [];
+
+            const board = document.getElementById('memory-board');
+            board.innerHTML = '';
+
+            memoryCards.forEach((icon, idx) => {
+                const card = document.createElement('div');
+                card.className = 'h-20 w-full cursor-pointer perspective-1000 btn-press';
+                card.innerHTML = `
+                    <div class="card-inner" id="card-inner-${idx}">
+                        <div class="card-face card-front-face">
+                            <span class="text-2xl font-game text-purple-400">❓</span>
+                        </div>
+                        <div class="card-face card-back-face">
+                            <span class="text-3xl select-none">${icon}</span>
+                        </div>
+                    </div>
+                `;
+                card.onclick = () => flipMemoryCard(card, idx, icon);
+                board.appendChild(card);
+            });
+        }
+
+        function flipMemoryCard(cardElement, index, icon) {
+            if (isProcessingFlip || cardElement.classList.contains('card-flipped')) return;
+
+            playSound('pop');
+            cardElement.classList.add('card-flipped');
+            flippedCards.push({ cardElement, index, icon });
+
+            if (flippedCards.length === 2) {
+                isProcessingFlip = true;
+                const [card1, card2] = flippedCards;
+
+                if (card1.icon === card2.icon) {
+                    playSound('coin');
+                    matchesFound++;
+                    document.getElementById('memory-matches').innerText = matchesFound;
+                    flippedCards = [];
+                    isProcessingFlip = false;
+
+                    if (matchesFound === memoryIcons.length) {
+                        setTimeout(() => {
+                            playSound('win');
+                            confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
+                            showGameOverModal('Ingatan Luar Biasa!', '6 / 6 Match Perfect!', '🏆');
+                        }, 500);
+                    }
+                } else {
+                    setTimeout(() => {
+                        card1.cardElement.classList.remove('card-flipped');
+                        card2.cardElement.classList.remove('card-flipped');
+                        flippedCards = [];
+                        isProcessingFlip = false;
+                    }, 800);
+                }
+            }
+        }
+
+        // MINI GAME 2: PET JUMP HOP 3D
+        let jumpLoop, jumpScore = 0;
+        let petPosY = 0, petVelY = 0, isJumping = false;
+        let platforms = [];
+
+        function startJumpGame() {
+            activeGameName = 'jump';
+            playSound('pop');
+            document.getElementById('minigames-view').classList.add('hidden');
+            document.getElementById('jump-game-view').classList.remove('hidden');
+            document.getElementById('jump-game-view').classList.add('flex');
+
+            const canvas = document.getElementById('jumpCanvas');
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            jumpScore = 0;
+            petPosY = canvas.height - 60;
+            petVelY = 0;
+            isJumping = false;
+            platforms = [
+                { x: 50, y: canvas.height - 30, w: 100 },
+                { x: 200, y: canvas.height - 70, w: 90 },
+                { x: 350, y: canvas.height - 110, w: 80 }
+            ];
+
+            document.getElementById('jump-score').innerText = jumpScore;
+            runJumpGameLoop();
+        }
+
+        function triggerJump() {
+            if (!isJumping) {
+                petVelY = -9.5;
+                isJumping = true;
+                playSound('pop');
+            }
+        }
+
+        function runJumpGameLoop() {
+            const canvas = document.getElementById('jumpCanvas');
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            petVelY += 0.5;
+            petPosY += petVelY;
+
+            ctx.fillStyle = '#f472b6';
+            platforms.forEach(p => {
+                p.x -= 2;
+                if (p.x + p.w < 0) {
+                    p.x = canvas.width + Math.random() * 50;
+                    p.y = canvas.height - 40 - Math.random() * 100;
+                    jumpScore += 10;
+                    document.getElementById('jump-score').innerText = jumpScore;
+                    playSound('coin');
+                }
+                ctx.beginPath();
+                ctx.roundRect(p.x, p.y, p.w, 14, 8);
+                ctx.fill();
+
+                if (petVelY > 0 && petPosY + 30 >= p.y && petPosY + 30 <= p.y + 14 && (canvas.width/3 >= p.x && canvas.width/3 <= p.x + p.w)) {
+                    petPosY = p.y - 30;
+                    petVelY = 0;
+                    isJumping = false;
+                }
+            });
+
+            const petEmoji = (state.species === 'cat') ? '🐱' : (state.species === 'bear') ? '🧸' : (state.species === 'panda') ? '🐼' : '🐰';
+            ctx.font = '32px sans-serif';
+            ctx.fillText(petEmoji, canvas.width / 3 - 15, petPosY);
+
+            if (petPosY > canvas.height + 20) {
+                playSound('pop');
+                cancelAnimationFrame(jumpLoop);
+                showGameOverModal('Permainan Selesai!', jumpScore, '🐰');
+                return;
+            }
+
+            jumpLoop = requestAnimationFrame(runJumpGameLoop);
+        }
+
+        // MINI GAME 3: BALLOON POP 3D
+        let popLoop, popTimerInterval, popScore = 0, popTime = 25;
+        let balloons = [];
+
+        function startPopGame() {
+            activeGameName = 'pop';
+            playSound('pop');
+            document.getElementById('minigames-view').classList.add('hidden');
+            document.getElementById('pop-game-view').classList.remove('hidden');
+            document.getElementById('pop-game-view').classList.add('flex');
+
+            const canvas = document.getElementById('popCanvas');
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+
+            popScore = 0;
+            popTime = 25;
+            balloons = [];
+            document.getElementById('pop-score').innerText = popScore;
+            document.getElementById('pop-timer').innerText = popTime;
+
+            canvas.onclick = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const clickY = e.clientY - rect.top;
+
+                for (let i = balloons.length - 1; i >= 0; i--) {
+                    let b = balloons[i];
+                    const dist = Math.hypot(clickX - b.x, clickY - b.y);
+                    if (dist < b.radius + 12) {
+                        popScore += 10;
+                        document.getElementById('pop-score').innerText = popScore;
+                        playSound('pop');
+                        balloons.splice(i, 1);
+                        break;
+                    }
+                }
+            };
+
+            popTimerInterval = setInterval(() => {
+                popTime--;
+                document.getElementById('pop-timer').innerText = popTime;
+                if (popTime <= 0) {
+                    clearInterval(popTimerInterval);
+                    cancelAnimationFrame(popLoop);
+                    playSound('win');
+                    confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+                    showGameOverModal('Waktu Habis!', popScore, '🎈');
+                }
+            }, 1000);
+
+            runPopGameLoop();
+        }
+
+        function runPopGameLoop() {
+            const canvas = document.getElementById('popCanvas');
+            const ctx = canvas.getContext('2d');
+
+            if (Math.random() < 0.08) {
+                balloons.push({
+                    x: Math.random() * (canvas.width - 40) + 20,
+                    y: canvas.height + 30,
+                    speed: 1.5 + Math.random() * 2,
+                    color: ['🎈', '💖', '⭐', '🌸'][Math.floor(Math.random() * 4)],
+                    radius: 20
+                });
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = balloons.length - 1; i >= 0; i--) {
+                let b = balloons[i];
+                b.y -= b.speed;
+
+                ctx.font = '28px sans-serif';
+                ctx.fillText(b.color, b.x - 14, b.y + 10);
+
+                if (b.y < -30) balloons.splice(i, 1);
+            }
+
+            popLoop = requestAnimationFrame(runPopGameLoop);
+        }
+
+        window.onload = function() {
+            init3D();
+        };
+
+        window.onresize = function() {
+            const container = document.getElementById('canvas-container');
+            if (container && renderer && camera) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        };
+    </script>
+</body>
+</html>
