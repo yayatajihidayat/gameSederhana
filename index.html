@@ -31,7 +31,6 @@
         body {
             background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
             min-height: 100vh;
-            overflow: hidden;
         }
 
         /* Glassmorphism Styling */
@@ -116,7 +115,7 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-between min-h-screen p-2 sm:p-4 text-gray-800 relative select-none">
+<body class="flex flex-col items-center justify-between min-h-screen p-2 sm:p-4 pb-20 sm:pb-4 text-gray-800 relative select-none overflow-y-auto">
 
     <!-- Top Header Navigation -->
     <header class="w-full max-w-md glass-panel rounded-3xl p-3 mb-2 flex justify-between items-center z-20 border-white/60">
@@ -154,7 +153,7 @@
         </div>
 
         <!-- 3D Canvas Viewport with integrated Speech Bubble overlay -->
-        <div id="canvas-container" class="relative w-full h-[370px] sm:h-[410px] rounded-3xl overflow-hidden shadow-xl glass-panel border border-white/80 cursor-grab active:cursor-grabbing transition-all duration-500 flex flex-col justify-between p-3">
+        <div id="canvas-container" class="relative w-full h-[320px] sm:h-[410px] rounded-3xl overflow-hidden shadow-xl glass-panel border border-white/80 cursor-grab active:cursor-grabbing transition-all duration-500 flex flex-col justify-between p-3">
             
             <!-- Speech / Interaction Bubble placed inside the 3D viewport over the character -->
             <div id="speech-bubble" class="self-center glass-panel-dark px-4 py-2.5 rounded-2xl shadow-md max-w-[90%] text-center relative animate-bounce-subtle border border-purple-200/80 cursor-pointer btn-press z-10 my-1" onclick="triggerNote()">
@@ -322,8 +321,8 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="w-full max-w-md glass-panel rounded-full p-1.5 shadow-lg mt-2 flex justify-around items-center border-white/80 z-20">
+    <!-- Bottom Navigation Bar (Fixed for Mobile Screens) -->
+    <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 w-[92%] max-w-md glass-panel rounded-full p-1.5 shadow-2xl flex justify-around items-center border-white/80 z-50">
         <button onclick="showMainView()" class="flex flex-col items-center text-pink-600 font-bold text-xs py-1 px-4 rounded-full bg-pink-100/80 border border-pink-200/80 btn-press">
             <i class="fa-solid fa-house text-sm mb-0.5"></i>
             <span>Rumah 3D</span>
@@ -1311,6 +1310,7 @@
                 camera.aspect = container.clientWidth / container.clientHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             }
         };
     </script>
